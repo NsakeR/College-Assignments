@@ -1,0 +1,7 @@
+﻿  ccolor.cpp
+  edit.cpp
+C:\Users\lefik\Desktop\Studia\Semestr III_war\JP3\Manipulacja konsolą\edit.cpp(122,28): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\lefik\Desktop\Studia\Semestr III_war\JP3\Manipulacja konsolą\edit.cpp(146,24): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+  witam.cpp
+  Generowanie kodu...
+  witam.vcxproj -> C:\Users\lefik\Desktop\Studia\Semestr III_war\JP3\Manipulacja konsolą\x64\Debug\witam.exe
