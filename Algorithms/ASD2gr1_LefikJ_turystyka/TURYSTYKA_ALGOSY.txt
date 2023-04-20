@@ -1,0 +1,239 @@
+///////////////////////////////////////////////////////////////////////////////////
+//
+//  Program znajdujący ilość kursów oparty o algorytm Kruskala w grafie
+//  
+//  Autor: Jakub Lefik
+//  Data: 11.05.2021   Wersja: 1.0
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <map>
+
+class Edge {            
+public:
+    int vertex1;        // pierwszy wierzchołek drogi
+    int vertex2;        // drugi wierzchołek drogi
+    int weight;         // dlugosc krawędzi między nimi
+
+    bool operator< (const Edge& e) const;
+    
+    //----- 4 żelazne metody + parametrowy -----// 
+
+    Edge();
+    Edge(const Edge& copy);
+    Edge& operator= (const Edge& e);
+    ~Edge() {};
+    Edge(int one, int two, int three);
+
+};
+
+bool Edge::operator<(const Edge& e) const 
+{
+    return weight < e.weight;
+}
+
+Edge::Edge() : vertex1(0),
+vertex2(0),
+weight(0)
+{
+}
+
+Edge::Edge(const Edge& copy) : vertex1(copy.vertex1), 
+vertex2(copy.vertex2),
+weight(copy.weight)
+{
+}
+
+Edge& Edge::operator=(const Edge& e)
+{
+    this->vertex1 = e.vertex1;
+    this->vertex2 = e.vertex2;
+    this->weight = e.weight;
+    return *this;
+}
+
+Edge::Edge(int one, int two, int three) : vertex1(one),
+vertex2(two),
+weight(three)
+{
+}
+
+class Graph : public Edge {
+
+public: 
+    //----- 4 żelazne metody + parametrowy -----// 
+    Graph();
+    Graph(const Graph& copy);
+    ~Graph() {};
+    Graph& operator= (const Graph& g);
+
+    Graph(int vertexes, int roads);
+
+    void add(const Edge& edge);         // Metoda dodająca do vectora krawędzi
+    int findParent(int node);            
+    void kruskal(std::vector<Edge>&);   // algorytm kruskala
+
+    int lowestEdgeInPath(int vert1, int vert2);     // algorytm znajdujący najkrótszą drogę w trasie (do dopracowania)
+    void show() {                                   // metoda do wyświetlania 
+        for (auto& it : road) {
+            std::cout << it.vertex1 << " " << it.vertex2 << " " << it.weight << " " << std::endl;
+        } 
+    }
+
+private:
+    int vertexes;
+    int edges;
+    std::vector<Edge> road;
+    std::vector<int> parent;
+    std::vector<int> rank;
+};
+
+Graph::Graph() : vertexes(0),
+edges(0)
+{
+}
+
+Graph::Graph(const Graph& copy) : vertexes(copy.vertexes), 
+edges(copy.edges)
+{
+}
+
+Graph& Graph::operator=(const Graph& g)
+{
+    this->vertexes = g.vertexes;
+    this->edges = g.edges;
+    return *this;
+}
+
+Graph::Graph(int v, int r) : vertexes(v), edges(r) {
+    parent.resize(v+1);
+    rank.resize(v+1);
+}
+
+void Graph::add(const Edge& edge)
+{
+    road.push_back(edge);
+}
+
+int Graph::findParent(int n) {
+    if (parent[n] == n) {
+        return n;
+    }
+    return findParent(parent[n]);
+}
+
+void Graph::kruskal(std::vector<Edge>& g) {
+
+    for (int i = 0; i < vertexes; i++) {
+        rank[i] = 0;
+        parent[i] = i;      // rozstawienie elementów w lesie 
+    }
+
+    sort(road.begin(), road.end());
+   
+    for (auto& e : road) {
+        int root1 = findParent(e.vertex1);
+        int root2 = findParent(e.vertex2);
+
+        if (root1 != root2) {
+            g.push_back(e);
+            if (rank[root1] < rank[root2]) {
+                parent[root1] = root2;
+                rank[root2]++;
+            }
+            else {
+                parent[root2] = root1;
+                rank[root1]++;
+            }
+        }
+    }
+}
+
+int Graph::lowestEdgeInPath(int vert1, int vert2) {
+    std::map<int, Edge> maps;
+    std::vector<Edge> abc;
+    std::vector<bool> temp(vertexes + 1, false);
+    abc.push_back({ vert1, vert1, 0 });
+    temp[vert1] = true;
+    int min = 30000000;
+
+    if (vert1 == vert2) {
+        return 0; 
+    }
+
+    while (abc.empty() == false) {
+        Edge iteratingVertex = abc.back();
+        abc.pop_back();
+        if (vert2 == iteratingVertex.vertex2) {
+            break;
+        }
+        
+        for (auto& iteratingEdge : road) {
+            if (temp[iteratingEdge.vertex2] == false) {
+                abc.push_back(iteratingEdge);
+                temp[iteratingEdge.vertex2] = true;
+                maps[iteratingEdge.vertex2] = iteratingEdge;
+            }
+        }
+    }
+
+    while (vert2 != vert1) {
+        if (maps[vert2].weight < min) {
+            min = maps[vert2].weight;
+        }
+        vert2 = maps[vert2].vertex1;
+    }
+    return min;
+}
+
+int main()
+{
+    int numOfCities = 0, numOfRoads = 0;
+    int numberOfKursy = 0;
+    int end1 = 1, end2 = 1;
+    int city1 = 0, city2 = 0;
+    int startCity = 0;
+    int finalCity = 0;
+    int numOfPass = 0;
+    int numOfSeats = 0;
+
+        std::cin >> numOfCities;
+        std::cin >> numOfRoads;
+        std::vector<Edge> hold;
+        Graph graph(numOfCities, numOfRoads);
+
+        for (int i = 0; i < numOfRoads; i++) {
+            std::cin >> city1 >> city2 >> numOfPass;
+            graph.add({ city1, city2, numOfPass });
+        }        
+
+        graph.kruskal(hold);
+        std::cin >> startCity;
+        std::cin >> finalCity;
+
+        do {
+            std::cin >> numOfPass;
+
+            numOfSeats = graph.lowestEdgeInPath(startCity, finalCity);
+            numOfSeats = numOfSeats - 1;            // trzeba wliczyć kierowce w liste osob 
+            if (numOfPass % numOfSeats == 0) {
+                numberOfKursy = numOfPass / numOfSeats;
+                std::cout << numberOfKursy;
+            }
+            else {
+                numberOfKursy = (numOfPass / numOfSeats) + 1;
+                std::cout << numberOfKursy;
+            }
+
+            std::cin >> end1;
+            std::cin >> end2;
+
+        } while (end1 != 0 && end2 != 0);
+    
+    return 0;
+}
+
