@@ -1,0 +1,51 @@
+FUNCTION_BLOCK ryzyko
+
+VAR_INPUT 
+    wiek : REAL;
+    moc: REAL;
+END_VAR
+
+VAR_OUTPUT
+    ryzyko : REAL;
+END_VAR
+
+FUZZIFY wiek
+	TERM mlody := (20, 1) (32,0);
+    TERM sredni := (30,0) (40,1) (50, 0);
+	TERM stary := (48, 0) (60, 1);
+END_FUZZIFY
+
+FUZZIFY moc
+    TERM mala := (20, 1) (80, 0) ; 
+    TERM srednia := (78, 0) (120,1) (162, 0);
+    TERM duza := (160, 0) (220,1);
+END_FUZZIFY
+
+DEFUZZIFY  ryzyko
+    TERM niskie := (0,1) (5,0); 
+    TERM srednioniskie := (4, 0) (10, 1) (16,0);
+	TERM srednie := (9, 0) (15, 1) (21, 0);
+	TERM sredniowysokie := (14, 0) (20, 1) (26,0);
+	TERM wysokie := (24, 0) (30, 1);
+    METHOD : COG;
+    DEFAULT := 0;
+END_DEFUZZIFY
+
+RULEBLOCK No1
+    AND : MIN;
+    ACT : MIN;
+    ACCU : MAX;
+
+    RULE 1 : IF wiek IS mlody AND moc IS duza THEN ryzyko IS wysokie;
+    RULE 2 : IF wiek IS mlody AND moc IS srednia THEN ryzyko IS sredniowysokie;
+    RULE 3 : IF wiek IS sredni AND moc IS duza THEN ryzyko IS sredniowysokie;
+    RULE 4 : IF wiek IS sredni AND moc IS srednia THEN ryzyko IS srednie;
+    RULE 5 : IF wiek IS stary AND moc IS srednia THEN ryzyko IS srednie;
+    RULE 6 : IF wiek IS stary AND moc IS mala THEN ryzyko IS srednioniskie;
+    RULE 7 : IF wiek IS stary AND moc IS duza THEN ryzyko IS wysokie;
+    RULE 8 : IF wiek IS sredni AND moc IS mala THEN ryzyko IS niskie;
+    RULE 9 : IF wiek IS mlody AND moc IS mala THEN ryzyko IS srednioniskie;
+               
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK

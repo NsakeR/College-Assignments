@@ -1,0 +1,54 @@
+FUNCTION_BLOCK klimatyzator
+
+VAR_INPUT
+temperatura_wewnatrz : REAL;
+temperatura_zewnatrz : REAL;
+END_VAR
+
+VAR_OUTPUT
+praca_klimatyzatora : REAL;
+END_VAR
+
+FUZZIFY temperatura_wewnatrz
+TERM zimno := (0, 1) (8, 0);
+TERM niska := (0, 0) (8, 1) (16, 0);
+TERM srednia := (8,0) (16,1) (24, 0);
+TERM wysoka :=	(16, 0) (24 , 1) (32,0);
+TERM goraco := (24,0) (32,1);
+END_FUZZIFY
+
+FUZZIFY temperatura_zewnatrz
+TERM zimno := (0, 1) (8, 0);
+TERM niska := (0, 0) (8, 1) (16, 0);
+TERM srednia := (8,0) (16,1) (24, 0);
+TERM wysoka :=	(16, 0) (24 , 1) (32,0);
+TERM goraco := (24,0) (32,1);
+END_FUZZIFY
+
+DEFUZZIFY praca_klimatyzatora
+TERM mocnochlodzi := (13,1) (16,0);
+TERM chlodzi :=	(13, 0) (16 , 1) (19,0);
+TERM srednia := (16,0) (19,1) (22, 0);
+TERM grzeje := (19, 0) (22, 1) (25, 0);
+TERM mocnogrzeje := (22, 0) (25, 1);
+
+METHOD : COG;
+DEFAULT := 0;
+END_DEFUZZIFY
+
+RULEBLOCK No1
+AND : MIN;
+ACT : MIN;
+ACCU : MAX;
+
+RULE 1: IF temperatura_wewnatrz IS niska AND temperatura_zewnatrz IS niska THEN praca_klimatyzatora IS mocnogrzeje;
+RULE 2: IF temperatura_wewnatrz IS srednia AND temperatura_zewnatrz IS niska THEN praca_klimatyzatora IS grzeje;
+RULE 3: IF temperatura_wewnatrz IS wysoka AND temperatura_zewnatrz IS niska THEN praca_klimatyzatora IS chlodzi;
+RULE 4: IF temperatura_wewnatrz IS niska AND temperatura_zewnatrz IS wysoka THEN praca_klimatyzatora IS srednia;
+RULE 5: IF temperatura_wewnatrz IS goraco AND temperatura_zewnatrz IS goraco THEN praca_klimatyzatora IS mocnochlodzi;
+RULE 6: IF temperatura_wewnatrz IS wysoka AND temperatura_zewnatrz IS goraco THEN praca_klimatyzatora IS mocnochlodzi;
+RULE 7: IF temperatura_wewnatrz IS srednia AND temperatura_zewnatrz IS srednia THEN praca_klimatyzatora IS srednia;
+RULE 8: IF temperatura_wewnatrz IS goraco AND temperatura_zewnatrz IS srednia THEN praca_klimatyzatora IS chlodzi;
+
+END_RULEBLOCK
+END_FUNCTION_BLOCK

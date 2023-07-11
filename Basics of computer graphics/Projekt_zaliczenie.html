@@ -1,0 +1,1077 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>GTA - Budget Edition</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <script src="three.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script>
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        var key = [];
+        var auto = [0, 0];
+        var czl_pos = [0, 0];
+        var czl_konto = 100;
+
+        var pistol_pos = [500, 1000];
+        var karabin_pos = [1690, -1570];
+
+        var in_auto = 0, in_fryz = 0;
+        var get_pist = 0, get_kar = 0;
+        var pist_skal = 1, kar_skal = 1.5;
+        var pist_ammo = 6, kar_ammo = 30;
+        var pist_in_hand = 1, kar_in_hand = 0;
+
+        var clock = new THREE.Clock();
+        var skala_czlowiek = 2;
+        var skala_auto = 5;
+        var garaz_open = 0;
+
+        var mouse = { x: 0, y: 0 };
+
+        var przechodzen_hp = 100;
+        var przechodzen_pos = [0, 0];
+
+        var ballas_hp = 240;
+
+        //obsluga klawiatury
+        document.addEventListener("keydown", function (event) { key[event.keyCode] = true; });
+        document.addEventListener("keyup", function (event) { key[event.keyCode] = false; });
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Swiatło
+        var light = new THREE.AmbientLight(0xFFFFFF, 0.6);
+        scene.add(light);
+
+        var fryz_light1 = new THREE.PointLight(0xffffff, 5, 700);
+        var fryz_light2 = new THREE.PointLight(0xffffff, 5, 700);
+        var fryz_light3 = new THREE.PointLight(0xffffff, 5, 700);
+        var fryz_light4 = new THREE.PointLight(0xffffff, 5, 700);
+        fryz_light1.position.set(-1100, -700, -1900);
+        fryz_light2.position.set(-1100, -700, -1100);
+        fryz_light3.position.set(-500, -600, -1900);
+        fryz_light4.position.set(-500, -600, -1100);
+
+        var fryz_swiatla = new THREE.Group();
+        fryz_swiatla.add(fryz_light1, fryz_light2);
+        scene.add(fryz_swiatla);
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Trawa
+        var traw1 = new THREE.PlaneGeometry(4000, 4000);
+        traw1.receiveShadow = true;
+
+        var trawa_tex = new THREE.TextureLoader().load('Mapymiasto/traww.jpg');
+        var trawa = new THREE.MeshStandardMaterial({ map: trawa_tex, metalness: 0.0, roughness: 0.8 });
+        trawa_tex.wrapS = trawa_tex.wrapT = THREE.RepeatWrapping;
+        trawa_tex.repeat.set(5, 5);
+
+        var trawa_pod1 = new THREE.Mesh(traw1, trawa);
+        trawa_pod1.rotation.x = -Math.PI / 2;
+
+        scene.add(trawa_pod1);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Droga
+        var drog = new THREE.PlaneGeometry(200, 4000);
+        var drog2 = new THREE.PlaneGeometry(200, 4000);
+        var drog3 = new THREE.PlaneGeometry(200, 4000);
+
+        drog.receiveShadow = true;
+        drog2.receiveShadow = true;
+        drog3.receiveShadow = true;
+
+        var droga_tex = new THREE.TextureLoader().load('Mapymiasto/road.jpg');
+        var droga = new THREE.MeshStandardMaterial({ map: droga_tex, metalness: 0.2, roughness: 0.5 });
+        droga_tex.wrapS = droga_tex.wrapT = THREE.RepeatWrapping;
+        droga_tex.repeat.set(1, 10);
+
+        var droga_pod = new THREE.Mesh(drog, droga);
+        droga_pod.rotation.x = - Math.PI / 2;
+        droga_pod.position.y = 2;
+
+        var droga_pod2 = new THREE.Mesh(drog, droga);
+        droga_pod2.rotation.x = - Math.PI / 2;
+        droga_pod2.rotation.z = - Math.PI / 2;
+        droga_pod2.position.y = 1.9;
+        droga_pod2.position.z = -1000;
+
+        var droga_pod3 = new THREE.Mesh(drog, droga);
+        droga_pod3.rotation.x = - Math.PI / 2;
+        droga_pod3.rotation.z = - Math.PI / 2;
+        droga_pod3.position.y = 1.9;
+
+        var drogi = new THREE.Group();
+        drogi.add(droga_pod, droga_pod2, droga_pod3);
+        drogi.receiveShadow = true;
+        scene.add(drogi);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Chodniki
+        var chod = new THREE.PlaneGeometry(100, 4000);
+        var chod2 = new THREE.PlaneGeometry(100, 4000);
+        var chod3 = new THREE.PlaneGeometry(100, 4000);
+        var chod4 = new THREE.PlaneGeometry(100, 4000);
+        var chod5 = new THREE.PlaneGeometry(100, 4000);
+        var chod6 = new THREE.PlaneGeometry(100, 4000);
+
+        var chod_tex = new THREE.TextureLoader().load('Mapymiasto/chodnik.jpg');
+        var chod_mat = new THREE.MeshStandardMaterial({ map: chod_tex, metalness: 0.2, roughness: 1 });
+        chod_tex.wrapS = chod_tex.wrapT = THREE.RepeatWrapping;
+        chod_tex.repeat.set(1, 30);
+
+        var chodnik = new THREE.Mesh(chod, chod_mat);
+        chodnik.rotation.x = -Math.PI / 2;
+        chodnik.position.set(-150, 1.5, 0);
+
+        var chodnik2 = new THREE.Mesh(chod2, chod_mat);
+        chodnik2.rotation.x = -Math.PI / 2;
+        chodnik2.position.set(150, 1.5, 0);
+
+        var chodnik3 = new THREE.Mesh(chod3, chod_mat);
+        chodnik3.rotation.x = -Math.PI / 2;
+        chodnik3.rotation.z = -Math.PI / 2;
+        chodnik3.position.set(0, 1, 150);
+
+        var chodnik4 = new THREE.Mesh(chod4, chod_mat);
+        chodnik4.rotation.x = -Math.PI / 2;
+        chodnik4.rotation.z = -Math.PI / 2;
+        chodnik4.position.set(0, 1, -150);
+
+        var chodnik5 = new THREE.Mesh(chod5, chod_mat);
+        chodnik5.rotation.x = -Math.PI / 2;
+        chodnik5.rotation.z = -Math.PI / 2;
+        chodnik5.position.set(0, 1, -1150);
+
+        var chodnik6 = new THREE.Mesh(chod6, chod_mat);
+        chodnik6.rotation.x = -Math.PI / 2;
+        chodnik6.rotation.z = -Math.PI / 2;
+        chodnik6.position.set(0, 1, -860);
+
+        var chodniki = new THREE.Group();
+        chodniki.add(chodnik, chodnik2, chodnik3, chodnik4, chodnik5, chodnik6);
+        scene.add(chodniki);
+        chodniki.receiveShadow = true;
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Budynki
+        var poczta_tex = new THREE.TextureLoader().load('Mapymiasto/budynek2.jpg');
+        poczta_tex.wrapS = poczta_tex.wrapT = THREE.RepeatWrapping;
+        poczta_tex.repeat.set(2, 1);
+        var poczta = new THREE.Mesh(new THREE.BoxGeometry(1700, 500, 500), new THREE.MeshStandardMaterial({ map: poczta_tex, metalness: 0.2, roughness: 0.8 }));
+        scene.add(poczta);
+        poczta.position.set(1100, 250, 500);
+        var poczta2 = poczta.clone();
+        scene.add(poczta2);
+        poczta2.position.set(1150, 250, -500);
+
+
+        var garaz_tex = new THREE.TextureLoader().load('Mapymiasto/garaz.jpg');
+        var garaż = new THREE.Mesh(new THREE.CylinderGeometry(200, 200, 400, 4, 5, true), new THREE.MeshStandardMaterial({ map: garaz_tex, side: THREE.DoubleSide, metalness: 0.3, roughness: 0.7 }));
+        scene.add(garaż);
+
+        garaż.rotation.z = Math.PI / 2;
+        garaż.rotation.x = Math.PI / 4;
+        garaż.position.set(-400, 100, 1300);
+
+        var garaz_tyl = new THREE.Mesh(new THREE.PlaneGeometry(285, 285), new THREE.MeshStandardMaterial({ map: garaz_tex, side: THREE.DoubleSide, metalness: 0.3, roughness: 0.7 }));
+        garaz_tyl.rotation.z = Math.PI / 2;
+        garaz_tyl.rotation.y = Math.PI / 2;
+        garaz_tyl.position.set(-600, 100, 1300);
+        scene.add(garaz_tyl);
+
+        var garaz_brama = garaz_tyl.clone();
+        scene.add(garaz_brama);
+        garaz_brama.rotation.z = Math.PI / 2;
+        garaz_brama.rotation.y = Math.PI / 2;
+        garaz_brama.position.set(-200, 100, 1300);
+
+
+        var komisariat = new THREE.Mesh(new THREE.BoxGeometry(1400, 1000, 750), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/policja.jpg'), metalness: 0.2, roughness: 0.8 }));
+        scene.add(komisariat);
+        komisariat.position.set(-1100, 500, 700);
+        var pol_sign = new THREE.Mesh(new THREE.PlaneGeometry(200, 500), new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/pol_sign.jpg'), side: THREE.DoubleSide }));
+        pol_sign.rotation.z = Math.PI / 2;
+        pol_sign.rotation.y = Math.PI / 2;
+        pol_sign.position.set(-395, 500, 700);
+        scene.add(pol_sign);
+
+
+        var fryz_zew = new THREE.Mesh(new THREE.BoxGeometry(1750, 600, 700), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/fryzjer.jpg'), metalness: 0.2, roughness: 0.8 }));
+        scene.add(fryz_zew);
+        fryz_zew.position.set(-1100, 300, -1600);
+        var drzwi_fryzjer = new THREE.Mesh(new THREE.PlaneGeometry(120, 200), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/drzwi_fryzjer.jpg'), metalness: 0.2, roughness: 0.7 }))
+        scene.add(drzwi_fryzjer);
+        drzwi_fryzjer.position.set(-900, 100, - 1248);
+        var fryzjer_szyld = new THREE.Mesh(new THREE.PlaneGeometry(250, 130), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/szyld_fryzjer.jpg'), metalness: 0.8, roughness: 0.4 }));
+        scene.add(fryzjer_szyld);
+        fryzjer_szyld.position.set(-900, 280, -1248);
+
+        var fryzjer_materials = [
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/fryzjer_srodek.jpg"), side: THREE.BackSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/fryzjer_srodek.jpg"), side: THREE.BackSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/panele.jpg"), side: THREE.BackSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/panele.jpg"), side: THREE.BackSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/fryzjer_pocz.jpg"), side: THREE.BackSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/fryzjer_pocz.jpg"), side: THREE.BackSide }),
+        ];
+
+        var fryzjer = new THREE.BoxGeometry(600, 300, 700);
+        var fryzjer_materials = new THREE.MeshFaceMaterial(fryzjer_materials);
+        var fryz = new THREE.Mesh(fryzjer, fryzjer_materials);
+        scene.add(fryz);
+        fryz.position.set(-900, -1000, -1600);
+
+        var cubeGeom = new THREE.CubeGeometry(600, 300, 0.1, 20, 20, 2);
+        mirrorCubeCamera = new THREE.CubeCamera(0.1, 900, 500);
+        scene.add(mirrorCubeCamera);
+        var mirrorCubeMaterial = new THREE.MeshBasicMaterial({ envMap: mirrorCubeCamera.renderTarget });
+        mirrorCube = new THREE.Mesh(cubeGeom, mirrorCubeMaterial);
+        mirrorCube.position.set(-900, -1000, -1800);
+        mirrorCubeCamera.position.set(-900, -1020, -1800);
+        scene.add(mirrorCube);
+
+        var fryz_wyjscie = new THREE.Mesh(new THREE.PlaneGeometry(120, 200), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/drzwi_fryzjer.jpg'), metalness: 0.2, roughness: 0.7, side: THREE.DoubleSide }));
+        fryz_wyjscie.position.set(-1100, -1050, -1252);
+        scene.add(fryz_wyjscie);
+
+        var parking_mission = new THREE.Mesh(new THREE.PlaneGeometry(810, 900), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/parking.jpg'), metalness: 0.2, roughness: 0.7, side: THREE.BackSide }));
+        parking_mission.position.set(1550, 2, -1600);
+        parking_mission.rotation.x = Math.PI / 2;
+        parking_mission.rotation.z = Math.PI / 2;
+
+        scene.add(parking_mission);
+
+        var lant_p = new THREE.CylinderGeometry(5, 10, 300, 50, 1);
+        var lant_mat_p = new THREE.MeshStandardMaterial({ color: 0x333300 });
+        var bulb_p = new THREE.SphereGeometry(10, 32, 32);
+        var bulb_mat_p = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+
+        var latarnia_p = new THREE.Mesh(lant_p, lant_mat_p);
+        latarnia_p.position.y = 150;
+        var swiatlo_uliczne_p = new THREE.PointLight(0xffcc00, 2, 1000);
+        swiatlo_uliczne_p.position.y = 300;
+
+        var kula_p = new THREE.Mesh(bulb_p, bulb_mat_p);
+        kula_p.position.y = 300;
+
+        var lantern_park = new THREE.Group();
+        lantern_park.add(kula_p, swiatlo_uliczne_p, latarnia_p);
+        lantern_park.position.set(1500, 0, - 1600)
+        scene.add(lantern_park);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Czlowiek model
+
+        var middle = new THREE.BoxGeometry(10 * skala_czlowiek, 15 * skala_czlowiek, 15 * skala_czlowiek);
+        var middle_mat = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        var tulow = new THREE.Mesh(middle, middle_mat);
+        tulow.position.y = 20 * skala_czlowiek;
+
+        var noga = new THREE.BoxGeometry(4 * skala_czlowiek, 10 * skala_czlowiek, 5 * skala_czlowiek);
+        var noga_mat = new THREE.MeshStandardMaterial({ color: 0xffd9b3 });
+        var noga1 = new THREE.Mesh(noga, noga_mat);
+        var noga2 = new THREE.Mesh(noga, noga_mat);
+        noga1.position.set(-2.5 * skala_czlowiek, 10 * skala_czlowiek, 1 * skala_czlowiek);
+        noga2.position.set(2.5 * skala_czlowiek, 10 * skala_czlowiek, 1 * skala_czlowiek);
+
+        var hand = new THREE.BoxGeometry(4 * skala_czlowiek, 15 * skala_czlowiek, 5 * skala_czlowiek);
+        var reka1 = new THREE.Mesh(hand, noga_mat);
+        var reka2 = new THREE.Mesh(hand, noga_mat);
+        reka1.position.set(7.5 * skala_czlowiek, 20 * skala_czlowiek, -1 * skala_czlowiek);
+        reka2.position.set(-7.5 * skala_czlowiek, 20 * skala_czlowiek, -1 * skala_czlowiek);
+
+        var head = new THREE.BoxGeometry(7.5 * skala_czlowiek, 7.5 * skala_czlowiek, 7.5 * skala_czlowiek);
+        var head_mat = new THREE.MeshStandardMaterial({ color: 0xffd9b3 });
+        var glowa = new THREE.Mesh(head, head_mat);
+        glowa.position.set(0 * skala_czlowiek, 32.5 * skala_czlowiek, 0 * skala_czlowiek);
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Latarnie
+        var lant = new THREE.CylinderGeometry(5, 10, 300, 50, 1);
+        var lant_mat = new THREE.MeshStandardMaterial({ color: 0x333300 });
+        var bulb = new THREE.SphereGeometry(10, 32, 32);
+        var bulb_mat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+
+
+        for (var i = -2000; i <= 2000; i = i + 700) {
+            var latarnia = new THREE.Mesh(lant, lant_mat);
+            var swiatlo_uliczne = new THREE.PointLight(0xffcc00, 0.5, 1000);
+            swiatlo_uliczne.castShadow = true;
+            var kula = new THREE.Mesh(bulb, bulb_mat);
+            swiatlo_uliczne.position.y = 300;
+            swiatlo_uliczne.position.x = 240;
+            swiatlo_uliczne.position.z = i;
+
+            kula.position.y = 300;
+            kula.position.x = 240;
+            kula.position.z = i;
+
+            latarnia.position.x = 240;
+            latarnia.position.y = 150;
+            latarnia.position.z = i;
+
+            var lantern = new THREE.Group();
+            lantern.add(kula, swiatlo_uliczne, latarnia);
+
+            scene.add(lantern);
+
+            if (i == 100 || i == -1000) scene.remove(lantern);
+        }
+
+        for (var i = -1700; i <= 2000; i = i + 700) {
+            var latarnia = new THREE.Mesh(lant, lant_mat);
+            var swiatlo_uliczne = new THREE.PointLight(0xffcc00, 1, 1000);
+            swiatlo_uliczne.castShadow = true;
+            var kula = new THREE.Mesh(bulb, bulb_mat);
+            swiatlo_uliczne.position.y = 300;
+            swiatlo_uliczne.position.x = i;
+            swiatlo_uliczne.position.z = 200;
+
+            kula.position.y = 300;
+            kula.position.x = i;
+            kula.position.z = 200;
+
+            latarnia.position.x = i;
+            latarnia.position.y = 150;
+            latarnia.position.z = 200;
+
+            var lantern = new THREE.Group();
+            lantern.add(kula, swiatlo_uliczne, latarnia);
+
+            scene.add(lantern);
+
+            if (i == 0) scene.remove(lantern);
+        }
+
+        for (var i = -1700; i <= 0; i = i + 700) {
+            var latarnia = new THREE.Mesh(lant, lant_mat);
+            var swiatlo_uliczne = new THREE.PointLight(0xffcc00, 1, 1000);
+            swiatlo_uliczne.castShadow = true;
+            var kula = new THREE.Mesh(bulb, bulb_mat);
+            swiatlo_uliczne.position.y = 300;
+            swiatlo_uliczne.position.x = i;
+            swiatlo_uliczne.position.z = -800;
+
+            kula.position.y = 300;
+            kula.position.x = i;
+            kula.position.z = -800;
+
+            latarnia.position.x = i;
+            latarnia.position.y = 150;
+            latarnia.position.z = -800;
+
+            var lantern = new THREE.Group();
+            lantern.add(kula, swiatlo_uliczne, latarnia);
+
+            scene.add(lantern);
+
+            if (i == 0) scene.remove(lantern);
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Grupy
+        /////////////////////////////////////////////////////////////////////////////////////
+
+        var czlowiek = new THREE.Group();
+        czlowiek.add(tulow, noga1, noga2, reka1, reka2, glowa);
+        czlowiek.position.set(200, 0, 1700);
+
+        czlowiek.castShadow = true;
+        czlowiek.receiveShadow = true;
+        scene.add(czlowiek);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Skybox
+
+        var skybox = new THREE.CubeGeometry(10000, 10000, 10000);
+        var skybox_materials = [
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_ft.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_bk.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_up.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_dn.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_rt.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_lf.png"), side: THREE.DoubleSide }),
+        ];
+
+        var skybox_material = new THREE.MeshFaceMaterial(skybox_materials);
+        var sky = new THREE.Mesh(skybox, skybox_material);
+        scene.add(sky);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Auto
+        var samochod = new THREE.Group();
+        var karoseria = new THREE.Group();
+        var siedzenia = new THREE.Group();
+        var szyby = new THREE.Group();
+
+        var auto_mat = new THREE.MeshStandardMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+        var boki = new THREE.PlaneGeometry(30 * skala_auto, 10 * skala_auto);
+        var bok = new THREE.Mesh(boki, auto_mat);
+        var bok2 = new THREE.Mesh(boki, auto_mat);
+        bok.position.z = -10 * skala_auto;
+        bok2.position.z = 10 * skala_auto;
+
+        var przod = new THREE.PlaneGeometry(20 * skala_auto, 10 * skala_auto);
+        var prz = new THREE.Mesh(przod, auto_mat);
+        var tyl = new THREE.Mesh(przod, auto_mat);
+        prz.rotation.y = -Math.PI / 2;
+        tyl.rotation.y = -Math.PI / 2;
+        prz.position.x = 15 * skala_auto;
+        tyl.position.x = -15 * skala_auto;
+
+        var podloga_mat = new THREE.MeshStandardMaterial({ color: 0x000000, side: THREE.DoubleSide });
+        var podloga = new THREE.PlaneGeometry(30 * skala_auto, 20 * skala_auto);
+        var pod = new THREE.Mesh(podloga, podloga_mat);
+        pod.rotation.x = Math.PI / 2;
+        pod.position.y = -5 * skala_auto;
+        //----------------------------------------------------------------------
+        var kolo = new THREE.CylinderGeometry(3 * skala_auto, 3 * skala_auto, 2 * skala_auto, 30);
+        var kola1 = new THREE.Mesh(kolo, podloga_mat);
+        var kola2 = new THREE.Mesh(kolo, podloga_mat);
+        var kola3 = new THREE.Mesh(kolo, podloga_mat);
+        var kola4 = new THREE.Mesh(kolo, podloga_mat);
+        var wheel = new THREE.Group();
+        wheel.add(kola1, kola2, kola3, kola4);
+        // x z y  o.O
+        kola1.position.set(9 * skala_auto, 11.1 * skala_auto, 4 * skala_auto);
+        kola2.position.set(9 * skala_auto, -11.1 * skala_auto, 4 * skala_auto);
+        kola3.position.set(-11 * skala_auto, -11.1 * skala_auto, 4 * skala_auto);
+        kola4.position.set(-11 * skala_auto, 11.1 * skala_auto, 4 * skala_auto);
+        wheel.rotation.x = Math.PI / 2;
+        //-----------------------------------------------------------------------
+        var mask = new THREE.PlaneBufferGeometry(10 * skala_auto, 20 * skala_auto);
+        var maska = new THREE.Mesh(mask, auto_mat);
+        maska.rotation.x = Math.PI / 2;
+        maska.position.set(10 * skala_auto, 5 * skala_auto, 0 * skala_auto);
+
+        var dac = new THREE.PlaneGeometry(10 * skala_auto, 20 * skala_auto);
+        var dach = new THREE.Mesh(dac, auto_mat);
+        dach.rotation.x = Math.PI / 2;
+        dach.position.set(-5 * skala_auto, 13.66 * skala_auto, 0 * skala_auto);
+        //-----------------------------------------------------------------------
+        var fot = new THREE.BoxGeometry(4 * skala_auto, 1 * skala_auto, 5 * skala_auto);
+        var fotel_mat = new THREE.MeshStandardMaterial({ color: 0xac7339, side: THREE.DoubleSide });;
+        var siedzisko1 = new THREE.Mesh(fot, fotel_mat);
+        var siedzisko2 = new THREE.Mesh(fot, fotel_mat);
+        siedzisko1.position.set(0 * skala_auto, -4.4 * skala_auto, -5 * skala_auto);
+        siedzisko2.position.set(0 * skala_auto, -4.4 * skala_auto, 5 * skala_auto);
+
+        var opa = new THREE.BoxGeometry(2 * skala_auto, 7 * skala_auto, 5 * skala_auto);
+        var oparcie1 = new THREE.Mesh(opa, fotel_mat);
+        var oparcie2 = new THREE.Mesh(opa, fotel_mat);
+        oparcie1.position.set(-2 * skala_auto, -1 * skala_auto, -5 * skala_auto);
+        oparcie2.position.set(-2 * skala_auto, -1 * skala_auto, 5 * skala_auto);
+        //-----------------------------------------------------------------------
+        var szyba = new THREE.PlaneGeometry(10 * skala_auto, 20 * skala_auto);
+        var szyb_mat = new THREE.MeshStandardMaterial({ color: 0x2019FF, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        var szyba_tyl = new THREE.Mesh(szyba, szyb_mat);
+        var szyba_przod = new THREE.Mesh(szyba, szyb_mat);
+        szyba_tyl.position.set(-12.5 * skala_auto, 9.3 * skala_auto, 0 * skala_auto);
+        szyba_tyl.rotation.x = Math.PI / 2;
+        szyba_tyl.rotation.y = Math.PI / 3;
+        szyba_przod.position.set(2.5 * skala_auto, 9.3 * skala_auto, 0 * skala_auto);
+        szyba_przod.rotation.x = Math.PI / 2;
+        szyba_przod.rotation.y = -Math.PI / 3;
+
+        var s_bok = new THREE.CircleGeometry(10 * skala_auto, 0, 0, 3.14);
+        var szybok_mat = new THREE.MeshStandardMaterial({ color: 0x2019FF, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        var szyba_bok1 = new THREE.Mesh(s_bok, szybok_mat);
+        var szyba_bok2 = new THREE.Mesh(s_bok, szybok_mat);
+        szyba_bok1.position.set(-5 * skala_auto, 5 * skala_auto, -10 * skala_auto);
+        szyba_bok2.position.set(-5 * skala_auto, 5 * skala_auto, 10 * skala_auto);
+        //---------------------------------------------------------
+        szyby.add(szyba_bok1, szyba_bok2, szyba_tyl, szyba_przod);
+        siedzenia.add(siedzisko1, oparcie1, siedzisko2, oparcie2);
+        karoseria.add(bok, bok2, tyl, prz, pod, dach);
+        samochod.add(karoseria, wheel, maska, siedzenia, szyby);
+        scene.add(samochod);
+        samochod.position.set(-400, 37, 1300);
+
+
+        camera.position.x = 0 * skala_czlowiek;
+        camera.position.y = 40 * skala_czlowiek;
+        camera.position.z = 25 * skala_czlowiek;
+        czlowiek.add(camera);
+
+        //pistolet model
+        var pistol = new THREE.Group();
+
+        var bron1 = new THREE.Mesh(new THREE.BoxGeometry(10 * pist_skal, 20 * pist_skal, 7 * pist_skal), new THREE.MeshStandardMaterial({ color: 0x595959, metalness: 0.7 }));
+        var bron2 = new THREE.Mesh(new THREE.BoxGeometry(10 * pist_skal, 30 * pist_skal, 7 * pist_skal), new THREE.MeshStandardMaterial({ color: 0x595959, metalness: 0.7 }));
+        bron2.rotation.z = Math.PI / 2;
+        bron2.position.set(7 * pist_skal, 10 * pist_skal, 0);
+
+        var lufaa = new THREE.Mesh(new THREE.CylinderGeometry(2 * pist_skal, 2 * pist_skal, 3 * pist_skal, 40, 1, 1), new THREE.MeshStandardMaterial({ color: 0x000FED, metalness: 0.7, side: THREE.DoubleSide }));
+        var celownik = new THREE.Mesh(new THREE.CylinderGeometry(2 * pist_skal, 2 * pist_skal, 2 * pist_skal, 40, 1, 1, 2.5, 4.5), new THREE.MeshStandardMaterial({ color: 0x000FED, metalness: 0.7, side: THREE.DoubleSide }));
+        var celownikv2 = new THREE.Mesh(new THREE.BoxGeometry(1 * pist_skal, 2 * pist_skal, 0.5 * pist_skal), new THREE.MeshStandardMaterial({ color: 0x40ff00 }));
+        var kula1 = new THREE.Mesh(new THREE.SphereGeometry(1.4, 32, 32), new THREE.MeshStandardMaterial({ side: THREE.FrontSide, color: 0xffff66 }));
+
+        lufaa.position.set(22 * pist_skal, 10 * pist_skal, 0 * pist_skal);
+        lufaa.rotation.z = Math.PI / 2;
+        celownik.position.set(-1 * pist_skal, 16 * pist_skal, 0 * pist_skal);
+        celownik.rotation.z = Math.PI / 2;
+        celownikv2.position.set(-1 * pist_skal, 16 * pist_skal, 0 * pist_skal);
+        kula1.position.set(22, 10, 0);
+        pistol.add(kula1, lufaa, bron1, bron2, celownik, celownikv2);
+        scene.add(pistol);
+
+        //Karabin model
+        var karabin = new THREE.Group();
+        var magazinek = new THREE.Mesh(new THREE.TorusGeometry(12 * kar_skal, 2 * kar_skal, 4, 15, 1.3), new THREE.MeshStandardMaterial({ color: 0x734d26, side: THREE.DoubleSide }));
+        magazinek.rotation.x = Math.PI;
+        var korpus = new THREE.Mesh(new THREE.BoxGeometry(30 * kar_skal, 5 * kar_skal, 5 * kar_skal), new THREE.MeshStandardMaterial({ color: 0xa3c2c2 }));
+        korpus.position.set(8 * kar_skal, 2.5 * kar_skal, 0);
+        var kolba = new THREE.Mesh(new THREE.BoxGeometry(15 * kar_skal, 4 * kar_skal, 4 * kar_skal), new THREE.MeshStandardMaterial({ color: 0x734d26 }));
+        kolba.position.set(30 * kar_skal, 1.5 * kar_skal, 0);
+        kolba.rotation.z = -Math.PI / 19;
+        var uchwyt = new THREE.Mesh(new THREE.BoxGeometry(3 * kar_skal, 10 * kar_skal, 2 * kar_skal), new THREE.MeshStandardMaterial({ color: 0x734d26 }));
+        uchwyt.position.set(20 * kar_skal, -2 * kar_skal, 0 * kar_skal);
+        uchwyt.rotation.z = Math.PI / 10;
+        var klufa = new THREE.Mesh(new THREE.CylinderGeometry(1 * kar_skal, 1 * kar_skal, 10 * kar_skal, 22, 1, 1), new THREE.MeshStandardMaterial({ color: 0x734d26, side: THREE.DoubleSide }));
+        klufa.position.set(-12 * kar_skal, 2 * kar_skal, 0);
+        klufa.rotation.z = Math.PI / 2;
+        var kula2 = new THREE.Mesh(new THREE.SphereGeometry(0.8 * kar_skal, 32, 32), new THREE.MeshStandardMaterial({ side: THREE.FrontSide, color: 0xffff66 }));
+        kula2.position.set(-12, 2, 0);
+
+        karabin.add(kula2, magazinek, korpus, kolba, uchwyt, klufa);
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // Przechodzen
+
+        var przechodzen = new THREE.Group();
+
+        var middle = new THREE.BoxGeometry(10 * skala_czlowiek, 15 * skala_czlowiek, 15 * skala_czlowiek);
+        var middle_mat = new THREE.MeshStandardMaterial({ color: 0x009900 });
+        var tulow_p = new THREE.Mesh(middle, middle_mat);
+        tulow_p.position.y = 20 * skala_czlowiek;
+
+        var noga = new THREE.BoxGeometry(4 * skala_czlowiek, 10 * skala_czlowiek, 5 * skala_czlowiek);
+        var noga_mat = new THREE.MeshStandardMaterial({ color: 0xffd9b3 });
+        var noga1_p = new THREE.Mesh(noga, noga_mat);
+        var noga2_p = new THREE.Mesh(noga, noga_mat);
+        noga1_p.position.set(-2.5 * skala_czlowiek, 10 * skala_czlowiek, 1 * skala_czlowiek);
+        noga2_p.position.set(2.5 * skala_czlowiek, 10 * skala_czlowiek, 1 * skala_czlowiek);
+
+        var hand = new THREE.BoxGeometry(4 * skala_czlowiek, 15 * skala_czlowiek, 5 * skala_czlowiek);
+        var reka1_p = new THREE.Mesh(hand, noga_mat);
+        var reka2_p = new THREE.Mesh(hand, noga_mat);
+        reka1_p.position.set(7.5 * skala_czlowiek, 20 * skala_czlowiek, -1 * skala_czlowiek);
+        reka2_p.position.set(-7.5 * skala_czlowiek, 20 * skala_czlowiek, -1 * skala_czlowiek);
+
+        var head = new THREE.BoxGeometry(7.5 * skala_czlowiek, 7.5 * skala_czlowiek, 7.5 * skala_czlowiek);
+        var head_mat = new THREE.MeshStandardMaterial({ color: 0xffd9b3 });
+        var glowa_p = new THREE.Mesh(head, head_mat);
+        glowa_p.position.set(0 * skala_czlowiek, 32.5 * skala_czlowiek, 0 * skala_czlowiek);
+
+        przechodzen.add(tulow_p, noga1_p, noga2_p, reka1_p, reka2_p, glowa_p);
+        przechodzen.position.set(-140, 0, -1800);
+        scene.add(przechodzen);
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // Zgraja na parkingu
+        var zbir1 = new THREE.Group();
+        var zbir2 = new THREE.Group();
+        var zbir3 = new THREE.Group();
+
+        var middle = new THREE.BoxGeometry(10 * skala_czlowiek, 15 * skala_czlowiek, 15 * skala_czlowiek);
+        var middle_mat = new THREE.MeshStandardMaterial({ color: 0x990099 });
+        var tulow_b = new THREE.Mesh(middle, middle_mat);
+        tulow_b.position.y = 20 * skala_czlowiek;
+
+        var noga = new THREE.BoxGeometry(4 * skala_czlowiek, 10 * skala_czlowiek, 5 * skala_czlowiek);
+        var noga_mat = new THREE.MeshStandardMaterial({ color: 0x664d00 });
+        var noga1_b = new THREE.Mesh(noga, noga_mat);
+        var noga2_b = new THREE.Mesh(noga, noga_mat);
+        noga1_b.position.set(-2.5 * skala_czlowiek, 10 * skala_czlowiek, 1 * skala_czlowiek);
+        noga2_b.position.set(2.5 * skala_czlowiek, 10 * skala_czlowiek, 1 * skala_czlowiek);
+
+        var hand = new THREE.BoxGeometry(4 * skala_czlowiek, 15 * skala_czlowiek, 5 * skala_czlowiek);
+        var reka1_b = new THREE.Mesh(hand, noga_mat);
+        var reka2_b = new THREE.Mesh(hand, noga_mat);
+        reka1_b.position.set(7.5 * skala_czlowiek, 20 * skala_czlowiek, -1 * skala_czlowiek);
+        reka2_b.position.set(-7.5 * skala_czlowiek, 20 * skala_czlowiek, -1 * skala_czlowiek);
+
+        var head = new THREE.BoxGeometry(7.5 * skala_czlowiek, 7.5 * skala_czlowiek, 7.5 * skala_czlowiek);
+        var head_mat = new THREE.MeshStandardMaterial({ color: 0x664d00 });
+        var glowa_b = new THREE.Mesh(head, head_mat);
+        glowa_b.position.set(0 * skala_czlowiek, 32.5 * skala_czlowiek, 0 * skala_czlowiek);
+
+        zbir1.add(tulow_b, noga1_b, noga2_b, reka1_b, reka2_b, glowa_b);
+        zbir1.position.set(1600, 0, -1650);
+        zbir2 = zbir1.clone();
+        zbir2.position.set(1590, 0, -1550);
+        zbir2.rotation.y = -Math.PI / 5;
+        zbir3 = zbir1.clone();
+        zbir3.position.set(1700, 0, -1630);
+        zbir3.rotation.y = Math.PI / 3;
+        scene.add(zbir1, zbir2, zbir3);
+
+        var latarnia_parking = lantern.clone();
+        latarnia_parking.position.set(1400, 0, -1600);
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // Money
+        var hajsy = new THREE.Group();
+        var hajs = new THREE.Mesh(new THREE.BoxGeometry(10, 30, 14), new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/dolar.jpg'), side: THREE.DoubleSide }));
+        hajs.position.set(1650, 20, -1600);
+        var hajs_value = 100;
+        hajs.rotation.z = Math.PI / 4;
+
+        var hajs2 = hajs.clone();
+        hajs2.position.z = hajs.position.z + 50;
+
+        var hajs3 = hajs.clone();
+        hajs3.position.x = hajs.position.x - 50;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // DeadBox
+        var deadBox = new THREE.Mesh(new THREE.BoxGeometry(500, 300, 500), new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/youdied.jpg'), side: THREE.BackSide }));
+        scene.add(deadBox);
+        deadBox.position.y = -500;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // Instrukcje
+        var powitanie = new THREE.Mesh(new THREE.PlaneGeometry(500, 300), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/sanradom.jpg'), side: THREE.DoubleSide }));
+        scene.add(powitanie);
+        powitanie.position.set(600, 200, 1700);
+        powitanie.rotation.y = -Math.PI / 2;
+
+        var sterowanie = new THREE.Mesh(new THREE.PlaneGeometry(500, 300), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/sterowanie.jpg'), side: THREE.DoubleSide }));
+        scene.add(sterowanie);
+        sterowanie.position.set(600, 200, 1100);
+        sterowanie.rotation.y = -Math.PI / 2;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // Znacznik misji 
+        var znacz = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 30, 64, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }));
+        scene.add(znacz);
+        znacz.position.set(500, 20, 1000);
+        animate();
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        // Włosy
+
+        var krotkie = new THREE.Mesh(new THREE.BoxGeometry(7.5 * skala_czlowiek, 2 * skala_czlowiek, 7.5 * skala_czlowiek), new THREE.MeshBasicMaterial({ color: 0x000000, roughness: 1, metalness: 1, side: THREE.DoubleSide }));
+        var godek = new THREE.Mesh(new THREE.SphereGeometry(7 * skala_czlowiek, 32, 32, 4, 4.7, 2, 3.2), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }));
+        var afro = new THREE.Mesh(new THREE.SphereGeometry(8 * skala_czlowiek, 32, 32, 5, 6.3, 0, 2.5), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }));
+      
+
+        function animate() {
+            requestAnimationFrame(animate);
+            keyboard();
+
+            if (czlowiek.position.y == -1100 &&
+                czlowiek.position.z <= -900) {
+                mirrorCubeCamera.updateCubeMap(renderer, scene);
+                mirrorCube.visible = true;
+            }
+
+            if (get_pist == 0) {
+                pistol.rotation.y += 0.01;
+            }
+
+            if (get_kar == 0) {
+                karabin.rotation.y += 0.01;
+            }
+
+            auto[0] = samochod.position.x;
+            auto[1] = samochod.position.z;
+
+            czl_pos[0] = czlowiek.position.x;
+            czl_pos[1] = czlowiek.position.z;
+
+            pistol.position.x = pistol_pos[0];
+            pistol.position.y = 20;
+            pistol.position.z = pistol_pos[1];
+
+            karabin.position.x = karabin_pos[0];
+            karabin.position.y = 20;
+            karabin.position.z = karabin_pos[1];
+
+            przechodzen_pos[0] = przechodzen.position.x;
+            przechodzen_pos[1] = przechodzen.position.z;
+
+            //Spadanie za mapę
+            if (czlowiek.position.x < -2000 || czlowiek.position.x > 2000 || czlowiek.position.z < -2000 || czlowiek.position.z > 2000) {
+                czlowiek.position.y -= 10;
+                if (czlowiek.position.y <= -1200) {
+                    czlowiek.position.set(0, -500, 0);
+                }
+            }
+
+            if (przechodzen_hp > 0) {
+                przechodzen.position.z += 5;
+            }
+
+            if (przechodzen.position.z > 2000) {
+                przechodzen.position.set(-140, 0, -1800);
+            }
+
+            if (czl_pos[0] < -800 && czl_pos[0] > -1000 && czlowiek.position.y == 0 && czl_pos[1] > -1250 && czl_pos[1] < -1240) {
+                czlowiek.position.y = -1100;
+                czlowiek.position.z = - 1300;
+                in_fryz = 1;
+            }
+
+            if (czl_pos[0] < -1040 && czl_pos[0] > -1160 && czlowiek.position.y == -1100 && czl_pos[1] > -1300 && czl_pos[1] < -1200) {
+                czlowiek.position.x = -900;
+                czlowiek.position.y = 0;
+                czlowiek.position.z = -1200;
+                in_fryz = 0;
+            }
+
+            if (get_pist == 1) {
+                if (zbir1.position.x - czl_pos[0] < 500 && czl_pos[1] - zbir1.position.z < 500) {
+                    if (kula1.position.x >= 150 && kula1.position.x <= 200) {
+                        console.log("hit");
+                        ballas_hp -= 60;
+                    }
+                }
+            }
+
+            if (ballas_hp == 180) {
+                zbir1.rotation.x = Math.PI / 2;
+                scene.add(hajs);
+            }
+
+            if (ballas_hp == 60) {
+                zbir2.rotation.x = Math.PI / 2;
+                scene.add(hajs2);
+                scene.add(karabin);
+            }
+
+            if (ballas_hp == -60) {
+                zbir3.rotation.x = Math.PI / 2;
+                scene.add(hajs3);
+            }
+
+            hajs.rotation.y += 0.01;
+            hajs2.rotation.y += 0.02;
+            hajs3.rotation.y += 0.01;
+
+            if (czl_pos[0] > 1550 && czl_pos[0] < 1800 && czl_pos[1] < -1500 && czl_pos[1] > -1700) {
+                scene.remove(hajs);
+                scene.remove(hajs2);
+                scene.remove(hajs3);
+
+                czl_konto = 400;
+            }
+
+            if (czl_pos[0] > 450 && czl_pos[0] < 650 && czl_pos[1] > 980 && czl_pos[1] < 1080) {
+                znacz.position.set(-150, 20, 1300);
+            }
+
+            if (czl_pos[0] >-160 && czl_pos[0] < -140 && czl_pos[1] > 1250 && czl_pos[1] < 1350) {
+                znacz.position.set(1200, 20, -1300);
+            }
+
+            if (czl_pos[0] > 1150 && czl_pos[0] < 1250 && czl_pos[1] > -1350 && czl_pos[1] < -1250) {
+                scene.remove(znacz);
+            }
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            renderer.render(scene, camera);
+        }
+
+        function keyboard() {
+
+            var delta = clock.getDelta(); // seconds.
+            var moveDistance = 400 * delta; // 200 pixels per second
+
+            if (key['a'.charCodeAt(0)] || key['A'.charCodeAt(0)]) {
+                if (czlowiek.position.x > -4000) {
+                    if (in_auto == 1) {
+                        samochod.rotation.y += 0.04;
+                    }
+                    else if (in_auto == 0) {
+                        czlowiek.rotation.y += 0.04;
+                        chodzenie();
+                    }
+                }
+            }
+
+            if (key['d'.charCodeAt(0)] || key['D'.charCodeAt(0)]) {
+                if (czlowiek.position.x < 4000) {
+                    if (in_auto == 1) {
+                        samochod.rotation.y -= 0.04;
+                    }
+                    else if (in_auto == 0) {
+                        czlowiek.rotation.y -= 0.04;
+                        chodzenie();
+                    }
+                }
+            }
+
+            if (key['w'.charCodeAt(0)] || key['W'.charCodeAt(0)]) {
+                if (czlowiek.position.z > -4000) {
+                    if (in_auto == 1) {
+                        samochod.translateX((moveDistance));
+                    }
+                    else if (in_auto == 0) {
+                        czlowiek.translateZ((-moveDistance));
+                        chodzenie();
+                    }
+
+                    if (pistol_pos[0] - czl_pos[0] < 50 && pistol_pos[1] - czl_pos[1] < 50 && pistol_pos[0] - czl_pos[0] > -50 && pistol_pos[1] - czl_pos[1] > -50) {
+
+                        pistol_pos[0] = 20;
+                        pistol_pos[1] = -20;
+                        pistol.position.y = 40;
+                        pistol.rotation.y = Math.PI / 2;
+                        pist_skal = 0.01;
+                        get_pist = 1;
+
+                    }
+
+                    if (karabin_pos[0] - czl_pos[0] < 50 && karabin_pos[1] - czl_pos[1] < 50 && karabin_pos[0] - czl_pos[0] > -50 && karabin_pos[1] - czl_pos[1] > -50) {
+                        karabin_pos[0] = 20;
+                        karabin_pos[1] = -20;
+                        karabin.position.y = 40;
+                        karabin.rotation.y = -Math.PI / 2;
+                        kar_skal = 0.5;
+                        get_kar = 1;
+
+                    }
+                }
+            }
+
+            if (key['s'.charCodeAt(0)] || key['S'.charCodeAt(0)]) {
+                if (czlowiek.position.z < 4000) {
+                    if (in_auto == 1) {
+                        samochod.translateX((-moveDistance));
+                    }
+                    else if (in_auto == 0) {
+                        czlowiek.translateZ((moveDistance));
+                        chodzenie();
+                    }
+                }
+            }
+
+            //CIEKAWE
+            if (key['g'.charCodeAt(0)] || key['G'.charCodeAt(0)]) {
+                if (auto[0] - czl_pos[0] < 150 && auto[1] - czl_pos[1] < 150 && auto[0] - czl_pos[0] > -150 && auto[1] - czl_pos[1] > -150) {
+                    in_auto = 1;
+                    scene.remove(czlowiek);
+
+                    czlowiek.position.set(0, -20, -30)
+
+                    czlowiek.rotation.y = -Math.PI / 2;
+                    samochod.add(czlowiek);
+                    camera.rotation.x = 0;
+                    camera.position.y = 80;
+                    camera.position.x = 0;
+
+                }
+                if (in_auto == 0) {
+                    if (get_pist == 1) {
+                        czlowiek.remove(pistol);
+                        scene.add(pistol);
+                        pistol_pos[0] = czl_pos[0] + 70;
+                        pistol_pos[1] = czl_pos[1] - 70;
+                        pist_skal = 1;
+                        get_pist = 0;
+                    }
+
+                    if (get_kar == 1) {
+                        czlowiek.remove(karabin);
+                        scene.add(karabin);
+                        karabin_pos[0] = czl_pos[0] - 70;
+                        karabin_pos[1] = czl_pos[1] - 70;
+                        kar_skal = 1;
+                        get_kar = 0;
+                    }
+                }
+            }
+
+            if (key['h'.charCodeAt(0)] || key['H'.charCodeAt(0)]) {
+                if (in_auto == 1) {
+                    samochod.remove(czlowiek);
+                    in_auto = 0;
+                    scene.add(czlowiek);
+                    skala_czlowiek = 2;
+                    czlowiek.position.x = auto[0] - 100;
+                    czlowiek.position.z = auto[1] - 100;
+                    czlowiek.position.y = 0;
+                }
+
+                if (czl_pos[0] <= -100 && czl_pos[1] >= 1000 && czl_pos[0] >= -400 && czl_pos[1] <= 1600) {
+                    if (garaz_open == 0) {
+                        if (garaz_brama.position.y < 280) {
+                            garaz_brama.position.y += 200;
+                            garaz_brama.rotation.y += Math.PI / 3;
+                        }
+                    }
+                    garaz_open = 1;
+                }
+                else if (garaz_open == 1) {
+                    if (garaz_brama.position.y > 100) {
+                        garaz_brama.position.y -= 5;
+                        garaz_brama.rotation.y -= Math.PI / 120;
+                    }
+                }
+            }
+
+            if (key['1'.charCodeAt(0)] || key['1'.charCodeAt(0)]) {
+                pist_in_hand = 0;
+                kar_in_hand = 0;
+                czlowiek.remove(karabin);
+                czlowiek.remove(pistol);
+                scene.remove(pistol);
+                scene.remove(karabin);
+            }
+
+            if (key['2'.charCodeAt(0)] || key['2'.charCodeAt(0)]) {
+                if (get_pist == 1) {
+                    czlowiek.add(pistol);
+                    pist_in_hand = 1;
+                    kar_in_hand = 0;
+                    czlowiek.remove(karabin);
+                    
+                }
+            }
+
+            if (key['3'.charCodeAt(0)] || key['3'.charCodeAt(0)]) {
+                if (get_kar == 1) {
+                    czlowiek.remove(pistol);
+                    kar_in_hand = 1;
+                    pist_in_hand = 0;
+                    czlowiek.add(karabin);
+                }
+            }
+
+            if (key['4'.charCodeAt(0)] || key['4'.charCodeAt(0)]) {
+                camera.position.y = 700;
+                camera.rotation.x = -Math.PI / 2;
+
+            }
+
+            if (key['5'.charCodeAt(0)] || key['5'.charCodeAt(0)]) {
+                camera.position.y = 80;
+                camera.rotation.x = 0;
+            }
+
+            if (key['p'.charCodeAt(0)] || key['P'.charCodeAt(0)]) {
+                if (get_pist == 1 && pist_ammo > 0 && pist_in_hand == 1) {
+                    kula1.position.x += 100;
+
+                }
+                if (kula1.position.x >= 3000) {
+                    kula1.position.x = 0;
+                    pist_ammo--;
+                }
+
+                if (get_kar == 1 && kar_ammo > 0 && kar_in_hand == 1) {
+                    kula2.position.x -= 200;
+                }
+                if (kula2.position.x == -3012 || kula2.position.x == -3000) {
+                    kula2.position.x = 0;
+                    kar_ammo--;
+                }
+            }
+
+            if (key['r'.charCodeAt(0)] || key['R'.charCodeAt(0)]) {
+                pist_ammo = 6;
+                kar_ammo = 30;
+            }
+
+            if (in_fryz == 1) {
+               
+                if (key['b'.charCodeAt(0)] || key['B'.charCodeAt(0)]) {
+                    czlowiek.remove(godek, afro);
+                    czlowiek.add(krotkie);
+                    krotkie.position.y = 72;      
+
+                    camera.position.y = 80;
+                    camera.rotation.x = 0;
+                    camera.position.x = 0;
+                    camera.rotation.y = 0;
+                }              
+
+                if (key['n'.charCodeAt(0)] || key['N'.charCodeAt(0)]) {
+                    czlowiek.remove(krotkie, afro);
+                    czlowiek.add(godek);
+                    godek.position.y = 67;
+                    godek.rotation.z = Math.PI;
+                    godek.rotation.y = Math.PI / 2;
+
+                    camera.position.y = 90;
+                    camera.position.x = 0;
+                    camera.rotation.x = -Math.PI / 20;
+                    camera.rotation.y = 0;
+                }
+
+                if (key['m'.charCodeAt(0)] || key['M'.charCodeAt(0)]) {
+                    czlowiek.remove(krotkie, godek);
+                    czlowiek.add(afro);
+                    afro.position.y = 80;
+                    camera.position.y = 90;
+                    camera.position.x = 20;
+                    camera.rotation.y = -Math.PI / 20;
+                }
+
+                if (key['l'.charCodeAt(0)] || key['L'.charCodeAt(0)]) {
+                    czlowiek.remove(krotkie, godek, afro);
+                    camera.position.y = 80;
+                    camera.position.x = 0;
+                    camera.rotation.x = 0;
+                    camera.rotation.y = 0;
+                }
+
+
+            }
+            
+        };
+
+        function chodzenie() {
+
+            if (reka1.rotation.x < Math.PI / 4 && reka1.rotation.x > -Math.PI / 4) {
+                reka1.rotation.x -= Math.PI / 100;
+                reka2.rotation.x += Math.PI / 100;
+                noga1.rotation.x -= Math.PI / 100;
+                noga2.rotation.x += Math.PI / 100;
+            } else {
+                reka1.rotation.x += Math.PI / 4;
+                reka2.rotation.x -= Math.PI / 4;
+                noga1.rotation.x += Math.PI / 4;
+                noga2.rotation.x -= Math.PI / 4;
+            }
+        };
+
+            //function deathAnimation(czlowiek) {
+            //    czlowiek.rotation.x = Math.PI / 2;
+            //}
+
+
+            //function onDocumentMouseClick(event) {
+            //    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            //    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            //    if (get_pist == 1) {
+            //        console.log("Click.");
+
+            //    }
+            //}
+    </script>
+</body>
+</html>

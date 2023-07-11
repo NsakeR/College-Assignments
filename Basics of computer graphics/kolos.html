@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Kolos</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <script src="three.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script>
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(new THREE.Color(0x404080));
+        document.body.appendChild(renderer.domElement);
+        renderer.shadowMap.enabled = true;
+
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        var key = [];
+
+        //obsluga klawiatury
+        document.addEventListener("keydown", function (event) { key[event.keyCode] = true; });
+        document.addEventListener("keyup", function (event) { key[event.keyCode] = false; });
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Swiatło
+        var light = new THREE.AmbientLight(0xFFFFFF);
+        scene.add(light);
+
+
+
+        var point = new THREE.PointLight(0xcc0000, 5, 300);
+        scene.add(point);
+        point.position.set(100, 50, 30);
+
+        var wazon = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 20, 64, 64, 1), new THREE.MeshStandardMaterial({ color: 0xb3d9ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 }));
+        scene.add(wazon);
+        var podstawa = new THREE.Mesh(new THREE.CircleGeometry(10, 100), new THREE.MeshStandardMaterial({ color: 0xb3d9ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 }))
+        scene.add(podstawa);
+        podstawa.rotation.x = -Math.PI / 2;
+        podstawa.position.y = -10;
+
+        var skybox = new THREE.CubeGeometry(10000, 10000, 10000);
+        var skybox_materials = [
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_ft.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_bk.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_up.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_dn.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_rt.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/skyboxik_lf.png"), side: THREE.DoubleSide }),
+        ];
+
+        var skybox_material = new THREE.MeshFaceMaterial(skybox_materials);
+        var sky = new THREE.Mesh(skybox, skybox_material);
+        scene.add(sky);
+
+        var kwiat = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.6, 26, 64, 1), new THREE.MeshStandardMaterial({ color: 0x208000, side: THREE.DoubleSide }));
+
+        kwiat.position.set(0, 4, 0);
+        var srodek = new THREE.Mesh(new THREE.SphereGeometry(2, 64, 64), new THREE.MeshStandardMaterial({ color: 0xffff1a}));
+
+        srodek.position.y = 17;
+
+        var platek = new THREE.Mesh(new THREE.CylinderGeometry(1, 5, 4, 13, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff3333, side: THREE.DoubleSide }));
+
+        platek.position.y = 17;
+        platek.rotation.x = Math.PI;
+
+        var grupa_kwiat = new THREE.Group();
+        grupa_kwiat.add(kwiat, srodek, platek);
+        scene.add(grupa_kwiat);
+        grupa_kwiat.position.set(3, 0, 7);
+        var kwiat2 = new THREE.Group();
+        var kwiat3 = new THREE.Group();
+        var kwiat4 = new THREE.Group();
+        var kwiat5 = new THREE.Group();
+        kwiat2 = grupa_kwiat.clone();
+        kwiat3 = grupa_kwiat.clone();
+        kwiat4 = grupa_kwiat.clone();
+        kwiat5 = grupa_kwiat.clone();
+        scene.add(kwiat2, kwiat3, kwiat4, kwiat5);
+        kwiat2.position.set(0, 0, 0);
+        kwiat3.position.set(-7, 0, 0);
+        kwiat4.position.set(0, 0, -6);
+        kwiat5.position.set(5, 0, 3);
+
+        kwiat5.rotation.z = -Math.PI / 30;
+        kwiat3.rotation.z = Math.PI / 20;
+        kwiat4.rotation.z = Math.PI / 30;
+        grupa_kwiat.rotation.x = Math.PI / 30;
+
+        var stol = new THREE.Mesh(new THREE.BoxGeometry(200, 30, 400), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('Mapymiasto/stol.png'), side: THREE.DoubleSide, metalness: 0.2, roughness: 0.7 }));
+        scene.add(stol);
+        stol.position.y = -26;
+        stol.receiveShadow = true;
+        grupa_kwiat.castShadow = true;
+        animate();
+
+        var babcia_materials = [
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/babcia.jpg"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+        ];
+
+        var babcia_material = new THREE.MeshFaceMaterial(babcia_materials);
+        var obrazek1 = new THREE.Mesh(new THREE.BoxGeometry(20, 30, 5), babcia_material);
+        scene.add(obrazek1);
+        obrazek1.rotation.y = Math.PI / 4;
+        obrazek1.position.set(-50, 0, -10);
+
+        var dziadek_materials = [
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/dziadek.jpg"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("Mapymiasto/stol.png"), side: THREE.DoubleSide }),
+        ];
+
+        var dziadek_material = new THREE.MeshFaceMaterial(dziadek_materials);
+        var obrazek2 = new THREE.Mesh(new THREE.BoxGeometry(20, 30, 5), dziadek_material);
+        scene.add(obrazek2);
+        obrazek2.rotation.y = -Math.PI / 4;
+        obrazek2.position.set(50, 0, -10);
+
+        camera.position.z = 50;
+        camera.position.y = 20;
+
+        var lampka = new THREE.Group();
+        var podstawka = new THREE.Mesh(new THREE.CylinderGeometry(25, 25, 10, 50), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+        var stojak = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 50, 50), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+        var obud = new THREE.Mesh(new THREE.CylinderGeometry(30, 50, 20, 13, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff3333, side: THREE.DoubleSide }));
+       
+        podstawka.position.set(0, -5, -100);
+        stojak.position.set(0, 20, -100);
+        obud.position.set(0, 40, -100);
+        var swiatlo_lampka = new THREE.PointLight(0xff8000, 3, 200);
+        swiatlo_lampka.position.set(0, 30, -100)
+     
+        lampka.add(podstawka, stojak, obud, swiatlo_lampka);
+        scene.add(lampka);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            keyboard();
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);         
+        }
+
+        function keyboard() {
+
+            if (key['r'.charCodeAt(0)] || key['R'.charCodeAt(0)]) {
+                lampka.remove(swiatlo_lampka);
+            }
+
+            if (key['f'.charCodeAt(0)] || key['F'.charCodeAt(0)]) {
+                lampka.add(swiatlo_lampka);
+            }
+        }
+    </script>
+</body>
+</html>

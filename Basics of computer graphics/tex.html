@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>texturki</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <script src="three.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script>
+        var TSpeed = 50;
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 7000);
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(new THREE.Color(0x000000));
+        document.body.appendChild(renderer.domElement);
+
+        var controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+        var key = [];
+
+        //obsluga klawiatury
+        document.addEventListener("keydown", function (event) { key[event.keyCode] = true; });
+        document.addEventListener("keyup", function (event) { key[event.keyCode] = false; });
+
+        var ambientLight = new THREE.AmbientLight(0xFFFFFF);
+        scene.add(ambientLight);
+
+        var pointLight = new THREE.PointLight(0xffef00, 0.5, 1000);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        var materialSun = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/sunmap.jpg') });
+        var materialMerkury = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/merkury.jpg') });
+        var materialWenus = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/wenus.jpg') });
+        var materialEarth = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/earthmap1k.jpg') });
+        var materialMars = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/mars.jpg') });
+        var materialJupiter = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/jowisz.jpg') });
+        var materialSaturn = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/saturn.jpg') });
+        var materialUranus = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/uran.jpg') });
+        var materialNeptun = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/neptun.jpg') });
+        var materialMoon = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/ksiezyc.jpg') });
+        var materialSatRing = new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load('mapyplanet/pierscien.jpg'), side: THREE.DoubleSide });
+
+
+        /////////////////////////////////////////////////////////////////////////////
+        // Skybox
+        var skybox = new THREE.CubeGeometry(7000, 7000, 7000);
+        var skybox_materials = [
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("mapyplanet/stars_feature.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("mapyplanet/stars_feature.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("mapyplanet/stars_feature.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("mapyplanet/stars_feature.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("mapyplanet/stars_feature.png"), side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load("mapyplanet/stars_feature.png"), side: THREE.DoubleSide })
+         
+        ];
+
+        var skybox_material = new THREE.MeshFaceMaterial(skybox_materials);
+        var sky = new THREE.Mesh(skybox, skybox_material);
+        scene.add(sky);
+
+        var Sun = new THREE.Mesh(new THREE.SphereGeometry(50, 36, 36), materialSun);
+
+        var Merkury = new THREE.Mesh(new THREE.SphereGeometry(0.4, 36, 36), materialMerkury);
+        var Wenus = new THREE.Mesh(new THREE.SphereGeometry(1.2, 36, 36), materialWenus);
+        var Earth = new THREE.Mesh(new THREE.SphereGeometry(1.27, 36, 36), materialEarth);
+        var Mars = new THREE.Mesh(new THREE.SphereGeometry(0.6, 36, 36), materialMars);
+        var Jowisz = new THREE.Mesh(new THREE.SphereGeometry(14.2, 36, 36), materialJupiter);
+        var Saturn = new THREE.Mesh(new THREE.SphereGeometry(12, 36, 36), materialSaturn);
+        var Uran = new THREE.Mesh(new THREE.SphereGeometry(5.1, 36, 36), materialUranus);
+        var Neptun = new THREE.Mesh(new THREE.SphereGeometry(4.9, 36, 36), materialNeptun);
+        var Moon = new THREE.Mesh(new THREE.SphereGeometry(0.5, 36, 36), materialMoon);
+        var Ring = new THREE.Mesh(new THREE.RingGeometry(15, 20, 30, 1), materialSatRing);
+
+        var solar = new THREE.Group();
+        var mercurius = new THREE.Group();
+        mercurius.add(Merkury);
+        var wenus = new THREE.Group();
+        wenus.add(Wenus);
+        var ziemia = new THREE.Group();
+        ziemia.add(Earth);
+        var mars = new THREE.Group();
+        mars.add(Mars);
+        var jowisz = new THREE.Group();
+        jowisz.add(Jowisz);
+        var saturn = new THREE.Group();
+        saturn.add(Saturn);
+        saturn.add(Ring);
+        var uran = new THREE.Group();
+        uran.add(Uran);
+        var neptun = new THREE.Group();
+        neptun.add(Neptun);
+        var moon = new THREE.Group();
+        moon.add(Moon);
+        Earth.add(moon);
+
+        solar.add(Sun);
+        solar.add(mercurius);
+        solar.add(wenus);
+        solar.add(ziemia);
+        solar.add(mars);
+        solar.add(jowisz);
+        solar.add(saturn);
+        solar.add(uran);
+        solar.add(neptun);
+
+        solar.castShadow = true;
+        solar.receiveShadow = true;
+        scene.add(solar);
+
+        Merkury.position.x = 55;
+        Wenus.position.x = 60;
+        Earth.position.x = 70;
+        Moon.position.x = 2;
+        Mars.position.x = 78;
+        Jowisz.position.x = 100;
+        Saturn.position.x = 150;
+        Ring.position.x = 150;
+        Ring.rotation.x = Math.PI / 4;
+        
+        Uran.position.x = 200;
+        Neptun.position.x = 240;
+
+        ///////////////////////////////////////////////////////////////////////////////
+        //Statek
+        var statek = new THREE.Group();
+
+        var stat_geo = new THREE.BoxGeometry(20, 10, 50);
+        var stat_mat = new THREE.MeshStandardMaterial({ color: 0xD3D3D3 });
+        var statek_m = new THREE.Mesh(stat_geo, stat_mat);
+
+        var kolo_geo = new THREE.SphereGeometry(7.5, 32, 32, 0, 6.3, 0, 1.5);
+        var kolo_mat = new THREE.MeshStandardMaterial({ color: 0x00FFFF });
+        var kolo_m = new THREE.Mesh(kolo_geo, kolo_mat);
+        kolo_m.position.set(0, 4, 10);
+
+        var sil_geo = new THREE.CylinderGeometry(7.5, 20, 30);
+        var sil_mat = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+        var sil_m = new THREE.Mesh(sil_geo, sil_mat);
+        sil_m.position.set(0, 0, -40)
+        sil_m.rotation.x = Math.PI / 2;
+
+        statek.add(statek_m);
+        statek.add(kolo_m);
+        statek.add(sil_m);
+        statek.position.set(100, 0, 0);
+    
+
+        scene.add(statek);
+
+
+        camera.position.z = 150;
+        animate();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            //  controls.update();
+            keyboard();
+            
+            Sun.rotation.y += 0.0002509 * TSpeed;
+
+            mercurius.rotation.y += 0.0017608 * TSpeed;
+			    Merkury.rotation.y += 0.00235604*0.0167 * TSpeed;	
+
+            wenus.rotation.y += 0.0013952 * TSpeed;
+                Wenus.rotation.y += 0.00235604*0.00404 * TSpeed;
+            ziemia.rotation.y += 0.001 * TSpeed;
+                Earth.rotation.y += 0.00235604 * TSpeed;
+                moon.rotation.y += 0.03 * TSpeed;
+                
+            mars.rotation.y += 0.00053 * TSpeed;
+                Mars.rotation.y += 0.00243723 * TSpeed;
+            jowisz.rotation.y += 0.00009 * TSpeed;
+                Jowisz.rotation.y += 0.00235604*2.467 * TSpeed;
+            saturn.rotation.y += 0.00003 * TSpeed;
+                Saturn.rotation.y += 0.00235604 * 2.267 * TSpeed;
+                Ring.rotation.z += 0.04;
+
+            uran.rotation.y += 0.00001 * TSpeed;
+                Uran.rotation.y = 0.00235604*1.374 * TSpeed;
+            neptun.rotation.y += 0.000006 * TSpeed;
+                Neptun.rotation.y = 0.00235604*1.467 * TSpeed;
+
+            renderer.render(scene, camera);
+        }
+
+        function keyboard() {
+
+            if (key['a'.charCodeAt(0)] || key['A'.charCodeAt(0)]) {
+                statek.position.x -= 3;
+                
+            }
+            if (key['d'.charCodeAt(0)] || key['D'.charCodeAt(0)]) {             
+                statek.position.x += 3;
+                
+            }
+            if (key['w'.charCodeAt(0)] || key['W'.charCodeAt(0)]) {                
+                statek.position.z -= 3;
+                
+            }
+            if (key['s'.charCodeAt(0)] || key['S'.charCodeAt(0)]) {               
+                statek.position.z += 3;      
+                
+            }
+
+            if (key['o'.charCodeAt(0)] || key['O'.charCodeAt(0)]) {
+                statek.position.y += 3;
+
+            }
+
+            if (key['k'.charCodeAt(0)] || key['K'.charCodeAt(0)]) {
+                statek.position.y -= 3;
+            }
+
+            if (key['r'.charCodeAt(0)] || key['R'.charCodeAt(0)]) {   
+                statek.rotation.y += 0.05;
+            }
+
+            if (key['t'.charCodeAt(0)] || key['T'.charCodeAt(0)]) {
+                statek.rotation.y -= 0.05;
+            }
+
+
+            if (key['1'.charCodeAt(0)]) {
+                solar.add(camera);
+                camera.position.z = 150;
+            }
+
+            if (key['2'.charCodeAt(0)]) {
+                camera.position.set(0, 10, -40); 
+                camera.rotation.y = Math.PI / 2;
+                camera.lookAt(scene.position);
+                statek.add(camera);
+            }
+        }
+
+        
+    </script>
+</body>
+</html>
